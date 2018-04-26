@@ -34,11 +34,11 @@ class ItWorksTestCase extends TestCase {
         }
 
         for(node in nodes) {
-            assertEquals(list.length - 1, node.connectedNodeCount);
+            node.stop();
         }
 
         for(node in nodes) {
-            node.stop();
+            assertEquals(list.length - 1, node.connectedNodeCount);
         }
     }
 
@@ -59,22 +59,18 @@ class ItWorksTestCase extends TestCase {
         node1.tic();
         node2.tic();
 
-        assertEquals(2, node1.chain.length);
-        assertEquals(2, node2.chain.length);
-
-        assertTrue(ChainNode.compareBlocks(node1.lastBlock, node2.lastBlock));
-
         node2.mineBlock("Mined by Node2");
 
         node1.tic();
         node2.tic();
 
+        node1.stop();
+        node2.stop();
+
         assertEquals(3, node1.chain.length);
         assertEquals(3, node2.chain.length);
 
         assertTrue(ChainNode.compareBlocks(node1.lastBlock, node2.lastBlock));
-
-        node1.stop();
-        node2.stop();
+        assertTrue(false);
     }
 }
