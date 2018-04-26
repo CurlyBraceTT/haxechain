@@ -16,6 +16,11 @@ class ChainNode {
         return this.chain[chain.length - 1];
     }
 
+    public var connectedNodeCount (get, null) : Int;
+    public function get_connectedNodeCount() {
+        return this._acceptedConnections.length;
+    }
+
     public var address (default, null) : NodeAddress;
     public var nodesList (default, null) : Array<NodeAddress>;
 
@@ -44,6 +49,16 @@ class ChainNode {
         this._socket.bind(this._host, this.address.port);
         this._socket.listen(10);
         this._socket.setBlocking(false);
+    }
+
+    public function stop() : Void {
+        this._socket.close();
+        for(c in this._connections) {
+            c.close();
+        }
+        for(c in this._acceptedConnections) {
+            c.close();
+        }
     }
 
     public function lookup() {
@@ -165,13 +180,18 @@ class ChainNode {
     }
 
     public function accept() : Void {
-        try {
-            var newConnection = this._socket.accept();
-            this.log('Client connected...');
-            newConnection.setBlocking(false);
-            this._acceptedConnections.push(newConnection);
+        var connectionsEnded = false;
+        while(!connectionsEnded) {
+            try {
+                var newConnection = this._socket.accept();
+                this.log('Client connected...');
+                newConnection.setBlocking(false);
+                this._acceptedConnections.push(newConnection);
+            }
+            catch(e : Dynamic) { 
+                connectionsEnded = true;
+            }
         }
-        catch(e : Dynamic) { }
     }
 
     public function tic(wait : Float = 0.1) : Void {

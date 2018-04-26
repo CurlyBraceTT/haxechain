@@ -4,6 +4,37 @@ import haxe.unit.TestCase;
 import haxechain.ChainNode;
 
 class ItWorksTestCase extends TestCase {
+    public function testLookup() {
+        var list = [
+            { url: "localhost", port : 5000 },
+            { url: "localhost", port : 5001 },
+            { url: "localhost", port : 5002 }
+        ];
+
+        var nodes : Array<ChainNode> = new Array<ChainNode>();
+        for(address in list) {
+            var node = new ChainNode(address, list);
+            nodes.push(node);
+            node.start();
+        }
+
+        for(node in nodes) {
+            node.lookup();
+        }
+
+        for(node in nodes) {
+            node.accept();
+        }
+
+        for(node in nodes) {
+            assertEquals(list.length - 1, node.connectedNodeCount);
+        }
+
+        for(node in nodes) {
+            node.stop();
+        }
+    }
+
     public function testSimpleMineBlock() {
         var node1 = new ChainNode( { url: "localhost", port : 5000 }, []);
         var node2 = new ChainNode( { url: "localhost", port : 5001 }, []);
@@ -35,5 +66,8 @@ class ItWorksTestCase extends TestCase {
         assertEquals(3, node2.chain.length);
 
         assertTrue(ChainNode.compareBlocks(node1.lastBlock, node2.lastBlock));
+
+        node1.stop();
+        node2.stop();
     }
 }
