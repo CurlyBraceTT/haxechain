@@ -9,6 +9,7 @@ typedef NodeAddress = { url : String, port : Int };
 typedef Block = { index : Int, previousHash : String, timestamp : Float, data : String, hash : String };
 
 class ChainNode {
+    public var logsEnabled(default, default) : Bool;
     public var chain (default, null) : Array<Block>;
 
     public var lastBlock (get, null) : Block;
@@ -30,11 +31,12 @@ class ChainNode {
     private var _connections : Array<Socket>;
     private var _acceptedConnections : Array<Socket>;
 
-    public function new(address : NodeAddress, nodesList : Array<NodeAddress>) {
+    public function new(address : NodeAddress, nodesList : Array<NodeAddress>, logsEnabled : Bool = false) {
         this.address = address;
         this.nodesList = nodesList;
         this._connections = new Array<Socket>();
         this._acceptedConnections = new Array<Socket>();
+        this.logsEnabled = logsEnabled;
 
         this.chain = [ this.getGenesisBlock() ];
     }
@@ -206,7 +208,9 @@ class ChainNode {
     }
 
     function log(message : String): Void {
-        Sys.stdout().writeString('Node [${this.address.url} : ${this.address.port} ] - $message\n');
+        if(this.logsEnabled) {
+            Sys.println('Node [${this.address.url} : ${this.address.port} ] - $message');
+        }
     }
 
     public static function createBlock(index : Int, previousHash : String, timestamp : Float, data : String, hash : String) {

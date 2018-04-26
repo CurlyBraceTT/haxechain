@@ -2,5 +2,5 @@
 
 haxe Tests.hxml
 cd bin
-neko Tests.n
+neko Tests.n --no-log
 cd ..

@@ -4,6 +4,13 @@ import haxe.unit.TestCase;
 import haxechain.ChainNode;
 
 class ItWorksTestCase extends TestCase {
+    public var output : Bool;
+
+    public function new (output : Bool = true) {
+        super();
+        this.output = output;
+    }
+
     public function testLookup() {
         var list = [
             { url: "localhost", port : 5000 },
@@ -13,7 +20,7 @@ class ItWorksTestCase extends TestCase {
 
         var nodes : Array<ChainNode> = new Array<ChainNode>();
         for(address in list) {
-            var node = new ChainNode(address, list);
+            var node = new ChainNode(address, list, output);
             nodes.push(node);
             node.start();
         }
@@ -36,8 +43,8 @@ class ItWorksTestCase extends TestCase {
     }
 
     public function testSimpleMineBlock() {
-        var node1 = new ChainNode( { url: "localhost", port : 5000 }, []);
-        var node2 = new ChainNode( { url: "localhost", port : 5001 }, []);
+        var node1 = new ChainNode( { url: "localhost", port : 5000 }, [], output);
+        var node2 = new ChainNode( { url: "localhost", port : 5001 }, [], output);
         node1.start();
         node2.start();
 
