@@ -1,4 +1,5 @@
 import tests.ItWorksTestCase;
+import tests.SyncTestCase;
 import haxe.unit.TestRunner;
 
 class TestMain
@@ -15,6 +16,7 @@ class TestMain
 		var runner = new TestRunner();
 
 		runner.add(new ItWorksTestCase(logsEnabled));
+		runner.add(new SyncTestCase(logsEnabled));
 
 		runner.run();
 	}

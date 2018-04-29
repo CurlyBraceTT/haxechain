@@ -1,0 +1,11 @@
+{
+	"name": "haxechain",
+	"url" : "https://github.com/CurlyBraceTT/haxechain",
+	"license": "MIT",
+	"tags": ["neko", "blockchain"],
+	"description": "Haxe blockchain trivial implementation",
+    "version": "0.1.0",
+    "classPath": "src/",
+	"releasenote": "Initial version",
+	"contributors": ["CurlyBraceTT"]
+}

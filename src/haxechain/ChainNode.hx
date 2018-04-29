@@ -8,6 +8,10 @@ import haxe.Json;
 typedef NodeAddress = { url : String, port : Int };
 typedef Block = { index : Int, previousHash : String, timestamp : Float, data : String, hash : String };
 
+/**
+ * Haxechain node
+ * TODO Two-way socket communication
+**/
 class ChainNode {
     public var logsEnabled(default, default) : Bool;
     public var chain (default, null) : Array<Block>;
@@ -22,6 +26,11 @@ class ChainNode {
         return this._acceptedConnections.length;
     }
 
+    public var connectedToNodeCount (get, null) : Int;
+    public function get_connectedToNodeCount() {
+        return this._connections.length;
+    }
+
     public var address (default, null) : NodeAddress;
     public var nodesList (default, null) : Array<NodeAddress>;
 
@@ -31,7 +40,7 @@ class ChainNode {
     private var _connections : Array<Socket>;
     private var _acceptedConnections : Array<Socket>;
 
-    public function new(address : NodeAddress, nodesList : Array<NodeAddress>, logsEnabled : Bool = false) {
+    public function new(address : NodeAddress, nodesList : Array<NodeAddress>, logsEnabled : Bool = true) {
         this.address = address;
         this.nodesList = nodesList;
         this._connections = new Array<Socket>();
@@ -92,6 +101,19 @@ class ChainNode {
             c.setBlocking(false);
             c.custom = address;
             this._connections.push(c);
+
+            var inList = false;
+            for(node in this.nodesList) {
+                if(node.port == address.port && node.url == address.url) {
+                    inList = true;
+                    break;
+                }
+            }
+
+            if(!inList) {
+                this.nodesList.push(address);
+            }
+
             this.log('Successfully connected to $address');
         }
         catch(e : Dynamic) {
@@ -109,6 +131,7 @@ class ChainNode {
             type: "block",
             block: block
         };
+        
         var serialized = Json.stringify(message) + "\n";
         this.log('new block mined [${message.block.data}]');
 
@@ -159,26 +182,74 @@ class ChainNode {
         }
     }
 
+    function sendChain(c : Socket) {
+        var message = {
+            type: "chain",
+            data: this.chain
+        }
+
+        var serialized = Json.stringify(message) + "\n";
+
+        c.write(serialized);
+        this.log('Sending chain...');
+    }
+
+    function queryForSync(c : Socket) {
+        var message = {
+            type: "sync"
+        }
+
+        var serialized = Json.stringify(message) + "\n";
+        c.write(serialized);
+        this.log('Quering for sync...');
+    };
+
     public function readAll() : Void {
         try {
             var selected = Socket.select(this._acceptedConnections, null, null, 0);
 
             for(c in selected.read) {
-                var str = c.input.readLine();
-                this.log('Got message: $str');
-
-                var message = Json.parse(str);
-
-                if(message.type == "block") {
-                    var isValid = this.isValidNewBlock(message.block, this.lastBlock);
-                    if(isValid) {
-                        this.chain.push(message.block);
-                        this.log('new block added [${message.block.data}]');
-                    }
-                }
+                this.read(c);
             }
         }
         catch(e : Dynamic) { }
+
+        try {
+            var selected = Socket.select(this._connections, null, null, 0);
+
+            for(c in selected.read) {
+                this.read(c);
+            }
+        }
+        catch(e : Dynamic) { }
+    }
+
+    function read(c : Socket) {
+        var str = c.input.readLine();
+        this.log('Got message: $str');
+
+        var message : Dynamic = Json.parse(str);
+
+        if(message.type == "block") {
+            var isValid = this.isValidNewBlock(message.block, this.lastBlock);
+            if(isValid) {
+                this.chain.push(message.block);
+                this.log('new block added [${message.block.data}]');
+            } else {
+                // Query for sync
+                this.queryForSync(c);
+            }
+        } else if (message.type == "sync") {
+            this.sendChain(c);
+        } else if (message.type == "chain") {
+            if(message.data.length > this.chain.length) {
+                this.log('Replace chain');
+                // TODO Check if chain is valid
+                this.chain = message.data;
+            } else {
+                this.log('Chain is up to date');
+            }
+        }
     }
 
     public function accept() : Void {
@@ -187,8 +258,10 @@ class ChainNode {
             try {
                 var newConnection = this._socket.accept();
                 this.log('Client connected...');
+
                 newConnection.setBlocking(false);
                 this._acceptedConnections.push(newConnection);
+                this.queryForSync(newConnection);
             }
             catch(e : Dynamic) { 
                 connectionsEnded = true;

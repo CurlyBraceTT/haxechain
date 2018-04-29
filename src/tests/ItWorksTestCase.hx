@@ -43,34 +43,58 @@ class ItWorksTestCase extends TestCase {
     }
 
     public function testSimpleMineBlock() {
-        var node1 = new ChainNode( { url: "localhost", port : 5000 }, [], output);
-        var node2 = new ChainNode( { url: "localhost", port : 5001 }, [], output);
-        node1.start();
-        node2.start();
+        var list = [
+            { url: "localhost", port : 5000 },
+            { url: "localhost", port : 5001 }
+        ];
 
-        node1.connectTo(node2.address);
-        node2.connectTo(node1.address);
+        var nodes : Array<ChainNode> = new Array<ChainNode>();
+        for(address in list) {
+            var node = new ChainNode(address, list, output);
+            nodes.push(node);
+            node.start();
+        }
 
-        node1.tic();
-        node2.tic();
+        for(node in nodes) {
+            node.lookup();
+        }
 
-        node1.mineBlock("Mined by Node1");
-        
-        node1.tic();
-        node2.tic();
+        for(node in nodes) {
+            node.accept();
+        }
 
-        node2.mineBlock("Mined by Node2");
+        for(i in 0...3) {
+            for(node in nodes) {
+                node.tic();
+            }
+        }
 
-        node1.tic();
-        node2.tic();
+        nodes[0].mineBlock("Mined by Node1");
 
-        node1.stop();
-        node2.stop();
+        for(i in 0...3) {
+            for(node in nodes) {
+                node.tic();
+            }
+        }
 
-        assertEquals(3, node1.chain.length);
-        assertEquals(3, node2.chain.length);
+        nodes[1].mineBlock("Mined by Node2");
 
-        assertTrue(ChainNode.compareBlocks(node1.lastBlock, node2.lastBlock));
-        assertTrue(false);
+        for(i in 0...3) {
+            for(node in nodes) {
+                node.tic();
+            }
+        }
+
+        for(node in nodes) {
+            node.stop();
+        }
+
+        assertEquals(3, nodes[0].chain.length);
+        assertEquals(3, nodes[1].chain.length);
+
+        assertEquals(1, nodes[0].connectedNodeCount);
+        assertEquals(1, nodes[1].connectedToNodeCount);
+
+        assertTrue(ChainNode.compareBlocks(nodes[0].lastBlock, nodes[1].lastBlock));
     }
 }
