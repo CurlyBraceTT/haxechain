@@ -4,8 +4,9 @@
 	"license": "MIT",
 	"tags": ["neko", "blockchain"],
 	"description": "Haxe blockchain trivial implementation",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "classPath": "src/",
 	"releasenote": "Initial version",
-	"contributors": ["CurlyBraceTT"]
+	"contributors": ["CurlyBraceTT"],
+	"main": "Main"
 }
