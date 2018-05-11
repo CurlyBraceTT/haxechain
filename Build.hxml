@@ -1,0 +1,3 @@
+-main Main.hx
+-cp src
+-neko run.n
